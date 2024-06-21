@@ -1,0 +1,89 @@
+#!/bin/sh
+##
+# docs
+# -- devs/users should set $1 for generation type
+# ---- either being `uran` or `pid`
+#   >>>> where `uran` is hardware based typically
+#   >>>> and `pid` is software based unless random pids is enabled
+#   >>>>>> it should be noted that since the seed is not time based
+#   >>>>>> it should be nearly impossible to produce the same seed twice (with `uran`)
+#   >>>>>> as urandom should always produce unique random data
+#   >>>>>>>> however with `pid` the same seed can be produced by manipulating
+#   >>>>>>>> the number of programs ran/running unless the platform as an option for random pids
+#   >>>>>>>> this is however absent from linux as far as I can tell
+#   >>>>>>>> but present on FreeBSD notably
+#   >> when in doubt make use of `uran` as it will always produce a fresh, new seed
+#   >> where `pid` may not
+#   >>>> `pid` should only be used if /dev/urandom is unavailable
+##
+##
+# usage 
+# -- genseed [uran|pid]
+# ---- produces a seed combo for use with random()
+##
+[ ! "$1" ] && {
+  if [ -e /dev/urandom ]; then
+    set -- uran
+  else
+    set -- pid
+  fi 
+}
+case "$1" in
+  ('pid') 
+    : & wait; o="$!"; for i in 1 2 3 4 5; do
+      : & wait # generate new $!
+      o=$((o%o+$!*o))
+    done
+    for i in 1 2 3 4 5 7 7 8 9; do 
+    # in an ideal world this would be a random number of times
+    # however thats impossible since this is literally the code to generate a random number
+      : & wait
+    done
+    seed="$((o%o+$!*${#o}))" # greatly shorten seed
+    # large seeds produce large numbers = more randomness
+    : & wait; o="$!"; for i in 1 2 3 4 5; do
+      : & wait # generate new $!
+      o=$((o%o+$!*o))
+    done
+    for i in 1 2 3 4 5 6 7 8 9; do 
+    # in an ideal world this would be a random number of times
+    # however thats impossible since this is literally the code to generate a random number
+      : & wait
+    done
+    seed="$seed:$((o%o+$!*${#o}))"
+    ;;
+    # this could be better done with recursion
+  ('uran')
+    [ -c /dev/urandom ] && {
+      read -r seed1 < /dev/urandom
+      read -r seed2 < /dev/urandom
+      str="$seed1"
+      while [ "$str" ]; do
+        next="${str#?}"; current="${str%$next}"
+        [ "${str#?}" = "${str}" ] && exit 1
+        # certain shells are unable to preform parameter expansion on binary data
+        # if this occurs the shell will end up in a permanent loop
+        ##
+        # due to double length unicode characters using a length check wont work here
+        out="$(printf "%o" "\"$current")${out:-0}"
+        str="$next"
+      done
+      seed1="$out"
+      unset out str next current
+      str="$seed2"
+      while [ "$str" ]; do
+        next="${str#?}"; current="${str%$next}"
+        [ "${str#?}" = "${str}" ] && exit 1
+        out="$(printf "%o" "\"$current")${out:-0}"
+        str="$next"
+      done
+      seed2="$out"
+      unset out str next current
+      seed="$seed1:$seed2"
+      unset seed1 seed2
+    }
+    ;;
+  (*) exit 1;;
+esac
+printf '%s\n' "$seed"
+

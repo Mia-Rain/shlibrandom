@@ -1,0 +1,23 @@
+---
+shlibrandom
+-- xoroshiro64 in Shell for library usage 
+---
+
+---
+vs psh-prng
+-- this is technically a replacement for my previous project psh-prng
+---- however that was more made for standalone usage
+---- this is more aimed at library usage
+---
+
+---
+seed gen
+-- ./src/genseed or genseed() is used to produce a seed combo
+---- notably xoroshiro64 expects 2 seeds thus a seed combo of
+---- `seed1:seed2` is produced
+---
+
+---
+docs
+-- devs/users should see comments within ./src for docs
+---

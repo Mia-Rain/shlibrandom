@@ -1,0 +1,18 @@
+#!/bin/sh
+[ ! "$1" ] && exit 1
+IFS=":"; set -- $1
+s0="$1"; s1="$2"
+# s0/s1 are generated above @ L42-49
+: $((s1 ^= s0))
+# rotl is $(( ($1 << $2) | ( $1 >> (32 - $2) ) ))
+s0=$(( ( (s0 << 26) | ( s0 >> (32 - 26) ) ) ^ s1 ^ (s1 << 9)))
+s1=$(( s1 << 13 | ( s1 >> (32 - 13) ) ))
+o=$(( ( ((s0*0x9E3779BB) << 5) | ( (s0*0x9E3779BB) >> (32 - 5)) ) *5)) # result
+# this is far less complex with a another function as below
+# rotl() {
+#   echo $(( ($1 << $2) | ( $1 >> (32 - $2) ) ))
+# }
+# however using a whole other file for one line
+# doesn't really make sense
+echo "${o#-}"
+
